@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let initialized = false;
-let cleanupTasks = [];
 
 export function initSandboxApp() {
   if (initialized) {
@@ -10,13 +9,12 @@ export function initSandboxApp() {
   }
 
   initialized = true;
-  cleanupTasks = [];
 
-  const originalWindowAddEventListener = window.addEventListener.bind(window);
-  window.addEventListener = function patchedWindowAddEventListener(type, listener, options) {
-    cleanupTasks.push(() => window.removeEventListener(type, listener, options));
-    return originalWindowAddEventListener(type, listener, options);
-  };
+  // 用 AbortController 统一管理 window 级事件监听，卸载时一次 abort 全部移除
+  const eventController = new AbortController();
+  const eventSignal = { signal: eventController.signal };
+  const originalDocumentTitle = document.title;
+  let rafId = null;
 
 // 1. 数据定义
     const adultPaletteData = [
@@ -486,7 +484,7 @@ export function initSandboxApp() {
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true; // 开启阴影
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 柔和阴影
+    renderer.shadowMap.type = THREE.PCFShadowMap; // 柔和阴影（PCFSoftShadowMap 已弃用）
     container.appendChild(renderer.domElement);
 
     // 移除 Loading
@@ -644,18 +642,19 @@ export function initSandboxApp() {
 
     // 选中光圈
     const selectRing = new THREE.Group();
-    // 同步人物放大50%，光圈基础半径从 2.5/3.0 放大到 3.75/4.5
-    const selectRingGeo = new THREE.RingGeometry(3.75, 4.5, 48);
+    // 基础人偶最大半径(radius)约为2.6，这里设内圈为2.8，外圈为3.3
+    const selectRingGeo = new THREE.RingGeometry(2.8, 3.3, 48);
     const selectRingMat = new THREE.MeshBasicMaterial({ color: 0xffd700, side: THREE.DoubleSide, transparent: true, opacity: 0.82 });
     const selectRingBody = new THREE.Mesh(selectRingGeo, selectRingMat);
     selectRingBody.rotation.x = -Math.PI / 2;
     selectRing.add(selectRingBody);
 
-    const selectArrowGeo = new THREE.ConeGeometry(0.51, 1.14, 3); // 0.34*1.5, 0.76*1.5
+    // 箭头也等比缩小并靠近内圈
+    const selectArrowGeo = new THREE.ConeGeometry(0.35, 0.8, 3);
     const selectArrowMat = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.95 });
     const selectArrow = new THREE.Mesh(selectArrowGeo, selectArrowMat);
     selectArrow.rotation.x = Math.PI / 2;
-    selectArrow.position.set(0, 0.06, 4.38); // 2.92*1.5
+    selectArrow.position.set(0, 0.06, 3.25); // 定位在圆环边缘
     selectRing.add(selectArrow);
 
     selectRing.position.y = 0.05;
@@ -671,6 +670,67 @@ export function initSandboxApp() {
     orbit.maxDistance = 150;
 
     // 6. 模型生成工厂
+    // 木纹贴图只与形状有关、与颜色无关（颜色由材质 color 提供），全站共享一份
+    let sharedWoodTexture = null;
+    function getSharedWoodTexture() {
+      if (sharedWoodTexture) return sharedWoodTexture;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 256, 256);
+
+      // 柔和的木纹年轮
+      ctx.fillStyle = 'rgba(0,0,0,0.03)';
+      const centerX = 128;
+      const centerY = 128;
+      for (let r = 10; r < 200; r += Math.random() * 8 + 4) {
+        ctx.beginPath();
+        // 扭曲的圆
+        for (let a = 0; a <= Math.PI * 2; a += 0.1) {
+          const distortion = Math.sin(a * 4) * 3 + Math.cos(a * 3) * 4;
+          const x = centerX + Math.cos(a) * (r + distortion);
+          const y = centerY + Math.sin(a) * (r * 1.5 + distortion); // 拉长成椭圆模拟纵向木纹
+          if (a === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.lineWidth = Math.random() * 1.5 + 0.5;
+        ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+        ctx.stroke();
+      }
+
+      // 添加一些细微的噪点增强木材质感
+      const imgData = ctx.getImageData(0, 0, 256, 256);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = (Math.random() - 0.5) * 10;
+        data[i] = Math.max(0, Math.min(255, data[i] + noise));
+        data[i+1] = Math.max(0, Math.min(255, data[i+1] + noise));
+        data[i+2] = Math.max(0, Math.min(255, data[i+2] + noise));
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(1, 2); // 纵向拉伸木纹
+      sharedWoodTexture = texture;
+      return texture;
+    }
+
+    // 人偶原型缓存：同一种人偶的几何体/材质只构建一次，之后 clone 复用（clone 共享 geometry/material 引用）
+    const meshPrototypeCache = new Map();
+
+    function createPieceMesh(meta, options = {}) {
+      const cacheKey = `${meta.key}|${options.eyeColor ?? ''}|${options.eyeRadius ?? ''}`;
+      if (!meshPrototypeCache.has(cacheKey)) {
+        meshPrototypeCache.set(cacheKey, buildPieceMesh(meta, options));
+      }
+      return meshPrototypeCache.get(cacheKey).clone(true);
+    }
+
     function getMeta(key) {
       return paletteData.find(item => item.key === key) || paletteData[0];
     }
@@ -813,55 +873,15 @@ export function initSandboxApp() {
       }));
     }
 
-    function createPieceMesh(meta, options = {}) {
+    function buildPieceMesh(meta, options = {}) {
       const group = new THREE.Group();
       const eyeColor = options.eyeColor ?? 0x1a1a1a;
       const eyeRadius = options.eyeRadius ?? meta.eyeRadius ?? 0.32;
-      
-      // 生成木纹贴图
-      const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 256, 256);
-      
-      // 柔和的木纹年轮
-      ctx.fillStyle = 'rgba(0,0,0,0.03)';
-      const centerX = 128;
-      const centerY = 128;
-      for (let r = 10; r < 200; r += Math.random() * 8 + 4) {
-        ctx.beginPath();
-        // 扭曲的圆
-        for (let a = 0; a <= Math.PI * 2; a += 0.1) {
-          const distortion = Math.sin(a * 4) * 3 + Math.cos(a * 3) * 4;
-          const x = centerX + Math.cos(a) * (r + distortion);
-          const y = centerY + Math.sin(a) * (r * 1.5 + distortion); // 拉长成椭圆模拟纵向木纹
-          if (a === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.lineWidth = Math.random() * 1.5 + 0.5;
-        ctx.strokeStyle = 'rgba(0,0,0,0.04)';
-        ctx.stroke();
-      }
 
-      // 添加一些细微的噪点增强木材质感
-      const imgData = ctx.getImageData(0,0,256,256);
-      const data = imgData.data;
-      for(let i=0; i<data.length; i+=4) {
-        const noise = (Math.random() - 0.5) * 10;
-        data[i] = Math.max(0, Math.min(255, data[i] + noise));
-        data[i+1] = Math.max(0, Math.min(255, data[i+1] + noise));
-        data[i+2] = Math.max(0, Math.min(255, data[i+2] + noise));
-      }
-      ctx.putImageData(imgData, 0, 0);
+      // 复用共享木纹贴图，避免每个人偶重复绘制 canvas 并生成纹理
+      const texture = getSharedWoodTexture();
 
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(1, 2); // 纵向拉伸木纹
-
-      const mat = new THREE.MeshStandardMaterial({ 
+      const mat = new THREE.MeshStandardMaterial({
         color: meta.hexColor, 
         roughness: 0.45,     // 降低粗糙度，让人偶表面更有光泽，强化体积感
         metalness: 0.15,     // 增加一点金属度，使受光面反射更强烈
@@ -2046,7 +2066,7 @@ export function initSandboxApp() {
       scene.add(mesh);
       pieces.push(mesh);
       selectItem(mesh);
-      saveLayout();
+      if (!suppressSave) saveLayout();
       return mesh;
     }
 
@@ -2251,7 +2271,7 @@ export function initSandboxApp() {
       pointerDownMesh = null;
       pointerDragMoved = false;
       rotateOnPointerUp = false;
-    });
+    }, eventSignal);
 
     // 8. 拖放 API (HTML Sidebar -> WebGL Canvas)
     
@@ -2509,6 +2529,27 @@ export function initSandboxApp() {
     });
 
     // 9. 存储逻辑
+    // 批量加载时置为 true，spawnItem 不逐个触发 saveLayout，避免写入风暴
+    let suppressSave = false;
+
+    // 简易非阻塞提示，替代 alert()
+    let toastTimer = null;
+    function showToast(message) {
+      let toast = document.querySelector('.sandbox-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'sandbox-toast';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.classList.add('visible');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('visible');
+        toastTimer = null;
+      }, 2000);
+    }
+
     function saveLayout() {
       const data = pieces.map(p => ({
         kind: p.userData.kind,
@@ -2529,7 +2570,7 @@ export function initSandboxApp() {
         depth: tableDepth
       };
       localStorage.setItem(settingsKey, JSON.stringify(settings));
-      alert("沙盘设置已保存");
+      showToast("沙盘设置已保存");
     }
 
     function loadSandboxSettings() {
@@ -2561,9 +2602,15 @@ export function initSandboxApp() {
         // 清理旧的
         pieces.forEach(p => scene.remove(p));
         pieces = [];
-        data.forEach(item => {
-          spawnItem(item.kind, item.x, item.z, item.ry, item.name);
-        });
+        // 批量恢复布局，最后统一保存一次
+        suppressSave = true;
+        try {
+          data.forEach(item => {
+            spawnItem(item.kind, item.x, item.z, item.ry, item.name);
+          });
+        } finally {
+          suppressSave = false;
+        }
         autoIndex = pieces.length + 1;
         selectItem(pieces[pieces.length - 1] || null);
       } catch(e) {}
@@ -2685,7 +2732,7 @@ export function initSandboxApp() {
       // 窗口调整大小可能导致侧边栏宽度改变，重新计算标签位置和人偶卡片大小
       schedulePaletteResize(0);
       schedulePaletteResize(400); // 动画结束后再次校准
-    });
+    }, eventSignal);
 
     window.addEventListener('orientationchange', () => {
       // 屏幕旋转时强制重置
@@ -2693,7 +2740,7 @@ export function initSandboxApp() {
         schedulePaletteResize(0);
         window.dispatchEvent(new Event('resize'));
       }, 500);
-    });
+    }, eventSignal);
 
     // 视角滑动条事件
     ['pitch', 'yaw', 'zoom'].forEach(id => {
@@ -2738,7 +2785,6 @@ export function initSandboxApp() {
       tableBase.geometry = new THREE.BoxGeometry(tableWidth, 2, tableDepth);
       sandPlane.geometry.dispose();
       sandPlane.geometry = new THREE.PlaneGeometry(tableWidth - 2, tableDepth - 2);
-      saveLayout();
     }
 
     document.getElementById('resetBtn').addEventListener('click', () => {
@@ -2773,21 +2819,31 @@ export function initSandboxApp() {
     renderer.domElement.addEventListener('touchstart', e => {
       if (e.touches.length > 1) e.preventDefault();
     }, { passive: false });
-  window.addEventListener("keydown", e => {
+    window.addEventListener("keydown", e => {
+      // 焦点在输入类控件上时不拦截按键，避免误删人偶
+      const target = e.target;
+      const isFormTarget = target instanceof HTMLElement && (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      );
+      if (isFormTarget) return;
+
       if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
       if (!selectedMesh) return;
       if (e.key.toLowerCase() === "q") rotateSelectedBy(-45);
       if (e.key.toLowerCase() === "e") rotateSelectedBy(45);
-    });
+    }, eventSignal);
 
     window.addEventListener('resize', () => {
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(container.clientWidth, container.clientHeight);
-    });
+    }, eventSignal);
 
     function animate() {
-      requestAnimationFrame(animate);
+      rafId = requestAnimationFrame(animate);
       orbit.update();
       renderer.render(scene, camera);
     }
@@ -2798,17 +2854,50 @@ export function initSandboxApp() {
     schedulePaletteResize(300);
     animate();
 
-  window.addEventListener = originalWindowAddEventListener;
-
-  return () => {
-    cleanupTasks.forEach(task => {
-      try {
-        task();
-      } catch (error) {
-        console.warn('sandbox cleanup failed', error);
+  // 11. 清理：停掉渲染循环、移除事件监听、释放 WebGL 资源
+  function disposeObject(object) {
+    object.traverse(node => {
+      if (node.geometry) node.geometry.dispose();
+      if (node.material) {
+        const materials = Array.isArray(node.material) ? node.material : [node.material];
+        materials.forEach(material => {
+          // 释放材质引用的贴图（木纹 CanvasTexture 等）
+          if (material.map) material.map.dispose();
+          material.dispose();
+        });
       }
     });
-    cleanupTasks = [];
+  }
+
+  return () => {
+    // 停止渲染循环
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    // 移除所有 window 级事件监听
+    eventController.abort();
+
+    // 释放场景内所有几何体 / 材质 / 贴图（原型缓存与克隆共享同一份资源，重复 dispose 无害）
+    disposeObject(scene);
+    disposeObject(thumbScene);
+    meshPrototypeCache.forEach(prototype => disposeObject(prototype));
+
+    // 释放两个 WebGL 上下文（主渲染器 + 缩略图渲染器），避免反复进出页面耗尽上下文
+    renderer.dispose();
+    renderer.forceContextLoss();
+    thumbRenderer.dispose();
+    thumbRenderer.forceContextLoss();
+
+    // 恢复被修改的全局状态
+    document.title = originalDocumentTitle;
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+    document.querySelectorAll('.sandbox-toast').forEach(el => el.remove());
+
     initialized = false;
   };
 }

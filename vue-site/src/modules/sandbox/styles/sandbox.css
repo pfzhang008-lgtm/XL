@@ -5,27 +5,21 @@
       --soft: #7f6e60;
   }
 
-    * {
-      box-sizing: border-box;
+    /* 作用域限定在沙盘页内，避免 user-select / overflow 影响其他路由页面 */
+    .sandbox-app,
+    .sandbox-app * {
       user-select: none;
     }
 
-    html, body {
-      margin: 0;
-      height: 100%;
-      font-family: "Microsoft YaHei", sans-serif;
+    .sandbox-app {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
       color: var(--text);
-      background: var(--bg);
+      font-family: "Microsoft YaHei", sans-serif;
+      position: relative;
       overflow: hidden;
     }
-
-    .sandbox-app {
-    display: flex;
-    width: 100vw;
-    height: 100vh;
-    position: relative;
-    overflow: hidden;
-  }
 
     .sidebar-nav {
       position: absolute;
@@ -579,7 +573,8 @@
       }
     }
   @media screen and (orientation: portrait) {
-    html, body {
+    /* 仅在沙盘页面挂载时锁定 body，不影响其他路由 */
+    body:has(.sandbox-app) {
       width: 100vw;
       height: 100vh;
       overflow: hidden;
@@ -600,4 +595,27 @@
       transform: rotate(90deg);
       transform-origin: top left;
     }
+  }
+
+  /* 非阻塞提示 */
+  .sandbox-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 40px;
+    transform: translateX(-50%) translateY(10px);
+    padding: 10px 24px;
+    background: rgba(59, 47, 37, 0.88);
+    color: #fff;
+    font-size: 14px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+
+  .sandbox-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
