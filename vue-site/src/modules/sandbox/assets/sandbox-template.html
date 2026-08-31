@@ -1,0 +1,89 @@
+<div class="sandbox-app">
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <div class="nav-btn" id="nav-person">
+        <span>人物</span>
+      </div>
+      <div class="nav-btn" id="nav-sandbox">
+        <span>沙盘</span>
+      </div>
+    </nav>
+
+    <!-- 人物设置菜单 -->
+    <aside class="sidebar" id="sidebar-person">
+      <section class="toolbox" id="toolbox">
+        <!-- 人物库 -->
+      </section>
+    </aside>
+
+    <!-- 沙盘设置菜单 -->
+    <aside class="sidebar" id="sidebar-sandbox">
+      <section class="control-group">
+        <h2>视角调节</h2>
+        <div class="slider-group">
+          <label>俯仰角 (Pitch) <span id="val-pitch">30°</span></label>
+          <div class="slider-control">
+            <button class="step-btn" data-id="pitch" data-step="-5">-</button>
+            <input type="range" id="slider-pitch" min="10" max="85" value="30">
+            <button class="step-btn" data-id="pitch" data-step="5">+</button>
+          </div>
+        </div>
+        <div class="slider-group">
+          <label>旋转角 (Yaw) <span id="val-yaw">0°</span></label>
+          <div class="slider-control">
+            <button class="step-btn" data-id="yaw" data-step="-5">-</button>
+            <input type="range" id="slider-yaw" min="-180" max="180" value="0">
+            <button class="step-btn" data-id="yaw" data-step="5">+</button>
+          </div>
+        </div>
+        <div class="slider-group">
+          <label>缩放 (Zoom) <span id="val-zoom">85</span></label>
+          <div class="slider-control">
+            <button class="step-btn" data-id="zoom" data-step="-5">-</button>
+            <input type="range" id="slider-zoom" min="20" max="150" value="85">
+            <button class="step-btn" data-id="zoom" data-step="5">+</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="control-group">
+        <h2>沙盘大小</h2>
+        <div class="slider-group">
+          <label>宽度 <span id="val-width">100</span></label>
+          <div class="slider-control">
+            <button class="step-btn" data-id="width" data-step="-5">-</button>
+            <input type="range" id="slider-width" min="40" max="120" value="100">
+            <button class="step-btn" data-id="width" data-step="5">+</button>
+          </div>
+        </div>
+        <div class="slider-group">
+          <label>深度 <span id="val-depth">96</span></label>
+          <div class="slider-control">
+            <button class="step-btn" data-id="depth" data-step="-5">-</button>
+            <input type="range" id="slider-depth" min="30" max="150" value="96">
+            <button class="step-btn" data-id="depth" data-step="5">+</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="control-group">
+        <h2>全局操作</h2>
+        <div class="action-row">
+          <button class="action-btn primary" id="saveBtn">保存设置</button>
+          <button class="action-btn" id="clearBtn">清空沙盘</button>
+          <button class="action-btn" id="resetBtn">恢复默认</button>
+        </div>
+      </section>
+    </aside>
+
+    <main id="stage-container">
+      <div id="loading">正在加载 3D 引擎...</div>
+      <div id="drop-overlay"></div>
+      
+      <!-- 悬浮在沙盘底部的操作按钮 -->
+      <section id="person-controls" class="disabled-controls">
+        <button class="rotate-btn" data-rotate="-45">人物旋转-45°</button>
+        <button class="rotate-btn" data-rotate="45">人物旋转+45°</button>
+        <button class="action-btn" id="deleteBtn">人物删除</button>
+      </section>
+    </main>
+  </div>
