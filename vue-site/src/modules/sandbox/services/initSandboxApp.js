@@ -1252,12 +1252,13 @@ export function initSandboxApp() {
           const ccCapHeight = meta.capHeight || 2.74;
           const ccCapTopY = ccCapBaseY + ccCapHeight;
           const ccProfile = [
+            // 钟形下身：底部最宽，肩部快速内收形成溜肩，向下延伸成钟形
             new THREE.Vector2(0, 0),
             new THREE.Vector2(meta.radius * 0.96, 0.02),
-            new THREE.Vector2(meta.radius, ccLowerTop * 0.18),
-            new THREE.Vector2(meta.radius * 0.98, ccLowerTop * 0.54),
-            new THREE.Vector2(meta.radius * 0.92, ccLowerTop * 0.82),
-            new THREE.Vector2((meta.waistRadius || 0.94) * 1.04, ccLowerTop - 0.06),
+            new THREE.Vector2(meta.radius, ccLowerTop * 0.15),
+            new THREE.Vector2(meta.radius * 0.92, ccLowerTop * 0.38),
+            new THREE.Vector2(meta.radius * 0.76, ccLowerTop * 0.62),
+            new THREE.Vector2((meta.waistRadius || 0.94) * 1.08, ccLowerTop * 0.85),
             new THREE.Vector2(meta.waistRadius || 0.94, ccWaistY),
             new THREE.Vector2((meta.waistRadius || 0.94) * 0.94, ccWaistY + 0.03),
             new THREE.Vector2(0, ccWaistY + 0.04)
@@ -1277,16 +1278,15 @@ export function initSandboxApp() {
           const isCcSharp = meta.sharpTop;
           const capR = meta.capRadius || 1.22;
           const ccCapProfile = isCcSharp ? [
-            // 尖顶子弹状：底部直接满宽形成锐利棱角，上部快速收窄成尖顶
+            // 直筒尖帽：从帽檐起保持平直，上部快速收窄成尖顶
             new THREE.Vector2(0, 0),
             new THREE.Vector2(capR, 0),
-            new THREE.Vector2(capR, ccCapHeight * 0.12),
-            new THREE.Vector2(capR * 0.98, ccCapHeight * 0.32),
-            new THREE.Vector2(capR * 0.93, ccCapHeight * 0.52),
-            new THREE.Vector2(capR * 0.83, ccCapHeight * 0.66),
-            new THREE.Vector2(capR * 0.64, ccCapHeight * 0.79),
-            new THREE.Vector2(capR * 0.40, ccCapHeight * 0.89),
-            new THREE.Vector2(capR * 0.16, ccCapHeight * 0.96),
+            new THREE.Vector2(capR, ccCapHeight * 0.4),
+            new THREE.Vector2(capR * 0.99, ccCapHeight * 0.55),
+            new THREE.Vector2(capR * 0.94, ccCapHeight * 0.67),
+            new THREE.Vector2(capR * 0.80, ccCapHeight * 0.78),
+            new THREE.Vector2(capR * 0.55, ccCapHeight * 0.88),
+            new THREE.Vector2(capR * 0.28, ccCapHeight * 0.95),
             new THREE.Vector2(meta.tipRadius || 0.01, ccCapTopY - ccCapBaseY),
             new THREE.Vector2(0, ccCapTopY - ccCapBaseY + 0.01)
           ] : [
