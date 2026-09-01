@@ -1252,13 +1252,15 @@ export function initSandboxApp() {
           const ccCapHeight = meta.capHeight || 2.74;
           const ccCapTopY = ccCapBaseY + ccCapHeight;
           const ccProfile = [
-            // 钟形下身：底部最宽，肩部快速内收形成溜肩，向下延伸成钟形
+            // 裙形下身：轮廓参考 7 号裙子，裙摆在低处即达满宽，向上缓慢收窄
             new THREE.Vector2(0, 0),
-            new THREE.Vector2(meta.radius * 0.96, 0.02),
-            new THREE.Vector2(meta.radius, ccLowerTop * 0.15),
-            new THREE.Vector2(meta.radius * 0.92, ccLowerTop * 0.38),
-            new THREE.Vector2(meta.radius * 0.76, ccLowerTop * 0.62),
-            new THREE.Vector2((meta.waistRadius || 0.94) * 1.08, ccLowerTop * 0.85),
+            new THREE.Vector2(meta.radius * 0.94, 0.02),
+            new THREE.Vector2(meta.radius, ccLowerTop * 0.1),
+            new THREE.Vector2(meta.radius * 0.99, ccLowerTop * 0.24),
+            new THREE.Vector2(meta.radius * 0.95, ccLowerTop * 0.48),
+            new THREE.Vector2(meta.radius * 0.88, ccLowerTop * 0.72),
+            new THREE.Vector2(meta.radius * 0.76, ccLowerTop * 0.88),
+            new THREE.Vector2((meta.waistRadius || 0.94) * 1.02, ccLowerTop * 0.95),
             new THREE.Vector2(meta.waistRadius || 0.94, ccWaistY),
             new THREE.Vector2((meta.waistRadius || 0.94) * 0.94, ccWaistY + 0.03),
             new THREE.Vector2(0, ccWaistY + 0.04)
@@ -1285,8 +1287,8 @@ export function initSandboxApp() {
             new THREE.Vector2(capR * 0.99, ccCapHeight * 0.55),
             new THREE.Vector2(capR * 0.94, ccCapHeight * 0.67),
             new THREE.Vector2(capR * 0.80, ccCapHeight * 0.78),
-            new THREE.Vector2(capR * 0.55, ccCapHeight * 0.88),
-            new THREE.Vector2(capR * 0.28, ccCapHeight * 0.95),
+            new THREE.Vector2(capR * 0.60, ccCapHeight * 0.88),
+            new THREE.Vector2(capR * 0.38, ccCapHeight * 0.95),
             new THREE.Vector2(meta.tipRadius || 0.01, ccCapTopY - ccCapBaseY),
             new THREE.Vector2(0, ccCapTopY - ccCapBaseY + 0.01)
           ] : [
