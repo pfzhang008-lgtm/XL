@@ -1280,15 +1280,15 @@ export function initSandboxApp() {
           const isCcSharp = meta.sharpTop;
           const capR = meta.capRadius || 1.22;
           const ccCapProfile = isCcSharp ? [
-            // 直筒尖帽：从帽檐起保持平直，上部快速收窄成尖顶
+            // 三角尖帽：从帽檐满宽处直线收窄到尖顶，无弧度
             new THREE.Vector2(0, 0),
             new THREE.Vector2(capR, 0),
-            new THREE.Vector2(capR, ccCapHeight * 0.4),
-            new THREE.Vector2(capR * 0.99, ccCapHeight * 0.55),
-            new THREE.Vector2(capR * 0.94, ccCapHeight * 0.67),
-            new THREE.Vector2(capR * 0.80, ccCapHeight * 0.78),
-            new THREE.Vector2(capR * 0.60, ccCapHeight * 0.88),
-            new THREE.Vector2(capR * 0.38, ccCapHeight * 0.95),
+            new THREE.Vector2(capR * 0.97, ccCapHeight * 0.2),
+            new THREE.Vector2(capR * 0.93, ccCapHeight * 0.4),
+            new THREE.Vector2(capR * 0.88, ccCapHeight * 0.6),
+            new THREE.Vector2(capR * 0.80, ccCapHeight * 0.75),
+            new THREE.Vector2(capR * 0.62, ccCapHeight * 0.87),
+            new THREE.Vector2(capR * 0.35, ccCapHeight * 0.95),
             new THREE.Vector2(meta.tipRadius || 0.01, ccCapTopY - ccCapBaseY),
             new THREE.Vector2(0, ccCapTopY - ccCapBaseY + 0.01)
           ] : [
