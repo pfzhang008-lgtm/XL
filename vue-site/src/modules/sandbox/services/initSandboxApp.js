@@ -236,6 +236,7 @@ export function initSandboxApp() {
         headRadius: options.headRadius ?? 1.02,
         capRadius: options.capRadius ?? 1.24,
         capHeight: options.capHeight ?? 2.7,
+        capYOffset: options.capYOffset,
         tipRadius: options.tipRadius ?? 0.22,
         eyeRadius: options.eyeRadius ?? 0.34,
         eyeYOffset: options.eyeYOffset,
@@ -420,7 +421,7 @@ export function initSandboxApp() {
         createPegToy(3, 1, "red", "#3 红色中等高度圆柱体人偶", { radius: 1.18, height: 5.2, head: 1.18, neckStyle: "flat-cylinder" }),
         createConeRoundToy(4, 1, "red", "#4 红色中等高度锥形人偶", { radius: 1.72, radiusTop: 0.72, height: 5.24, head: 1.16, neckStyle: "flat-cylinder", bodyCurveStyle: "bell-reference" }),
         createPureConeToy(5, 1, "red", "#5 红色尖顶圆锥形人偶", { radius: 1.25, height: 6.84, sharpTop: true, eyeYOffset: 5.4, eyeForward: 0.55, eyeScale: 0.5, embedRatio: 1.05 }),
-        createConeCapToy(6, 1, "red", "#6 红色尖帽球头人偶", { radius: 1.62, waistRadius: 0.94, lowerHeight: 2.72, headRadius: 1.02, capRadius: 1.22, capHeight: 2.74, tipRadius: 0.0, sharpTop: true, eyeYOffset: 0, eyeForward: 0.96, eyeInsetRatio: 0.24, eyeScale: 1.08 }),
+        createConeCapToy(6, 1, "red", "#6 红色尖帽球头人偶", { radius: 1.62, waistRadius: 0.94, lowerHeight: 2.72, headRadius: 1.02, capRadius: 1.45, capHeight: 3.8, capYOffset: 0.1, tipRadius: 0.0, sharpTop: true, eyeYOffset: -0.05, eyeForward: 0.98, eyeInsetRatio: 0.1, eyeScale: 0.75 }),
         createBulbBaseToy(7, 1, "red", "#7 红色球头裙身人偶", { radius: 1.34, skirtHeight: 2.06, skirtTopRadius: 1.08, torsoRadius: 1.08, headRadius: 1.08, legRadius: 0.78, legHeight: 0.82, footRadius: 1.0, footHeight: 0.22, eyeYOffset: 0, eyeInsetRatio: 0.16, eyeScale: 1.02, neckStyle: "flat-cylinder" }),
         createSkirtLegToy(8, 1, "red", "#8 红色球头裙身人偶", { radius: 1.16, skirtHeight: 3.34, skirtTopRadius: 0.94, headRadius: 1.02, legRadius: 0.64, legHeight: 1.4, footRadius: 0.98, footHeight: 0.24, eyeYOffset: 0, eyeForward: 0.86, eyeInsetRatio: 0.16, eyeScale: 1.02, neckStyle: "flat-cylinder", bodyCurveStyle: "bell-reference" }),
         createPegToy(9, 1, "red", "#9 红色矮圆柱体人偶", { shape: "stout-peg", radius: 1.45, height: 3.1, head: 1.02, eyeYOffset: -0.02, eyeForward: 0.92, neckStyle: "flat-cylinder" }),
@@ -607,11 +608,20 @@ export function initSandboxApp() {
     sandPlane.receiveShadow = true;
     scene.add(sandPlane);
 
+    // 使用全局变量代替被移除的 slider DOM 元素
+    let currentSettings = {
+      pitch: 30,
+      yaw: 0,
+      zoom: 85,
+      width: 100,
+      depth: 96
+    };
+
     // 视角同步逻辑
     function updateCameraFromSliders() {
-      const pitch = THREE.MathUtils.degToRad(parseFloat(document.getElementById('slider-pitch').value));
-      const yaw = THREE.MathUtils.degToRad(parseFloat(document.getElementById('slider-yaw').value));
-      const zoom = parseFloat(document.getElementById('slider-zoom').value);
+      const pitch = THREE.MathUtils.degToRad(currentSettings.pitch);
+      const yaw = THREE.MathUtils.degToRad(currentSettings.yaw);
+      const zoom = currentSettings.zoom;
       
       const x = zoom * Math.sin(yaw) * Math.cos(pitch);
       const y = zoom * Math.sin(pitch);
@@ -620,10 +630,7 @@ export function initSandboxApp() {
       camera.position.set(orbit.target.x + x, orbit.target.y + y, orbit.target.z + z);
       camera.lookAt(orbit.target);
       orbit.update();
-      
-      document.getElementById('val-pitch').textContent = Math.round(THREE.MathUtils.radToDeg(pitch)) + '°';
-      document.getElementById('val-yaw').textContent = Math.round(THREE.MathUtils.radToDeg(yaw)) + '°';
-      document.getElementById('val-zoom').textContent = Math.round(zoom);
+      // 数值显示统一由 syncSettingUI 管理
     }
 
     // 辅助网格 (隐形交互面)
@@ -1241,7 +1248,7 @@ export function initSandboxApp() {
           const ccWaistY = ccLowerTop + 0.06;
           const ccHeadRadius = meta.headRadius || 1.02;
           const ccHeadCenterY = ccWaistY + ccHeadRadius * 0.82;
-          const ccCapBaseY = ccHeadCenterY + ccHeadRadius * 0.54;
+          const ccCapBaseY = ccHeadCenterY + ccHeadRadius * (meta.capYOffset !== undefined ? meta.capYOffset : 0.54);
           const ccCapHeight = meta.capHeight || 2.74;
           const ccCapTopY = ccCapBaseY + ccCapHeight;
           const ccProfile = [
@@ -1268,19 +1275,33 @@ export function initSandboxApp() {
           addRoundedNeck(ccWaistY, ccHead.position.y, ccHeadRadius, meta.waistRadius || 0.94);
 
           const isCcSharp = meta.sharpTop;
-          const ccCapProfile = [
+          const capR = meta.capRadius || 1.22;
+          const ccCapProfile = isCcSharp ? [
+            // 步枪子弹状 (Spitzer/Ogive shape)
             new THREE.Vector2(0, 0),
-            new THREE.Vector2((meta.capRadius || 1.22) * 0.96, 0.02),
-            new THREE.Vector2(meta.capRadius || 1.22, ccCapHeight * 0.14),
-            new THREE.Vector2((meta.capRadius || 1.22) * 0.98, ccCapHeight * 0.28),
-            new THREE.Vector2((meta.capRadius || 1.22) * 0.92, ccCapHeight * 0.48),
-            new THREE.Vector2((meta.capRadius || 1.22) * 0.78, ccCapHeight * 0.68),
-            new THREE.Vector2((meta.capRadius || 1.22) * 0.58, ccCapHeight * 0.84),
-            new THREE.Vector2((meta.capRadius || 1.22) * 0.4, ccCapHeight * 0.94),
-            isCcSharp ? new THREE.Vector2((meta.capRadius || 1.22) * 0.2, ccCapHeight * 0.97) : new THREE.Vector2((meta.capRadius || 1.22) * 0.28, ccCapHeight * 0.99),
-            isCcSharp ? new THREE.Vector2(meta.tipRadius || 0.02, ccCapTopY - ccCapBaseY) : new THREE.Vector2(meta.tipRadius || 0.24, ccCapTopY - ccCapBaseY),
-            isCcSharp ? new THREE.Vector2(0, ccCapTopY - ccCapBaseY + 0.02) : new THREE.Vector2((meta.tipRadius || 0.24) * 0.78, ccCapTopY - ccCapBaseY + 0.06),
-            isCcSharp ? new THREE.Vector2(0, ccCapTopY - ccCapBaseY + 0.02) : new THREE.Vector2(0, ccCapTopY - ccCapBaseY + 0.08)
+            new THREE.Vector2(capR * 0.98, 0.02),
+            new THREE.Vector2(capR, ccCapHeight * 0.15),
+            new THREE.Vector2(capR * 0.99, ccCapHeight * 0.35),
+            new THREE.Vector2(capR * 0.95, ccCapHeight * 0.55),
+            new THREE.Vector2(capR * 0.86, ccCapHeight * 0.72),
+            new THREE.Vector2(capR * 0.70, ccCapHeight * 0.85),
+            new THREE.Vector2(capR * 0.45, ccCapHeight * 0.94),
+            new THREE.Vector2(capR * 0.20, ccCapHeight * 0.98),
+            new THREE.Vector2(meta.tipRadius || 0.01, ccCapTopY - ccCapBaseY),
+            new THREE.Vector2(0, ccCapTopY - ccCapBaseY + 0.01)
+          ] : [
+            new THREE.Vector2(0, 0),
+            new THREE.Vector2(capR * 0.96, 0.02),
+            new THREE.Vector2(capR, ccCapHeight * 0.14),
+            new THREE.Vector2(capR * 0.98, ccCapHeight * 0.28),
+            new THREE.Vector2(capR * 0.92, ccCapHeight * 0.48),
+            new THREE.Vector2(capR * 0.78, ccCapHeight * 0.68),
+            new THREE.Vector2(capR * 0.58, ccCapHeight * 0.84),
+            new THREE.Vector2(capR * 0.4, ccCapHeight * 0.94),
+            new THREE.Vector2(capR * 0.28, ccCapHeight * 0.99),
+            new THREE.Vector2(meta.tipRadius || 0.24, ccCapTopY - ccCapBaseY),
+            new THREE.Vector2((meta.tipRadius || 0.24) * 0.78, ccCapTopY - ccCapBaseY + 0.06),
+            new THREE.Vector2(0, ccCapTopY - ccCapBaseY + 0.08)
           ];
           const ccCapGeo = new THREE.LatheGeometry(ccCapProfile, 48);
           const ccCap = new THREE.Mesh(ccCapGeo, mat);
@@ -2563,11 +2584,11 @@ export function initSandboxApp() {
 
     function saveSandboxSettings() {
       const settings = {
-        pitch: document.getElementById('slider-pitch').value,
-        yaw: document.getElementById('slider-yaw').value,
-        zoom: document.getElementById('slider-zoom').value,
-        width: tableWidth,
-        depth: tableDepth
+        pitch: currentSettings.pitch,
+        yaw: currentSettings.yaw,
+        zoom: currentSettings.zoom,
+        width: currentSettings.width,
+        depth: currentSettings.depth
       };
       localStorage.setItem(settingsKey, JSON.stringify(settings));
       showToast("沙盘设置已保存");
@@ -2578,16 +2599,16 @@ export function initSandboxApp() {
       if (!raw) return;
       try {
         const s = JSON.parse(raw);
-        document.getElementById('slider-pitch').value = s.pitch;
-        document.getElementById('slider-yaw').value = s.yaw;
-        document.getElementById('slider-zoom').value = s.zoom;
-        document.getElementById('slider-width').value = s.width;
-        document.getElementById('slider-depth').value = s.depth;
-        tableWidth = parseFloat(s.width);
-        tableDepth = parseFloat(s.depth);
-        
-        document.getElementById('val-width').textContent = tableWidth;
-        document.getElementById('val-depth').textContent = tableDepth;
+        currentSettings.pitch = parseFloat(s.pitch) || 30;
+        currentSettings.yaw = parseFloat(s.yaw) || 0;
+        currentSettings.zoom = parseFloat(s.zoom) || 85;
+        currentSettings.width = parseFloat(s.width) || 100;
+        currentSettings.depth = parseFloat(s.depth) || 96;
+
+        tableWidth = currentSettings.width;
+        tableDepth = currentSettings.depth;
+
+        Object.keys(currentSettings).forEach(syncSettingUI);
         
         updateSandboxSize();
         updateCameraFromSliders();
@@ -2742,42 +2763,64 @@ export function initSandboxApp() {
       }, 500);
     }, eventSignal);
 
-    // 视角滑动条事件
-    ['pitch', 'yaw', 'zoom'].forEach(id => {
-      document.getElementById(`slider-${id}`).addEventListener('input', updateCameraFromSliders);
-    });
+    // 设置项的取值范围与显示后缀（滑块与步进按钮共用）
+    const settingLimits = {
+      pitch: { min: 10, max: 85, unit: '°' },
+      yaw: { min: -180, max: 180, unit: '°' },
+      zoom: { min: 20, max: 150, unit: '' },
+      width: { min: 40, max: 120, unit: '' },
+      depth: { min: 30, max: 150, unit: '' }
+    };
 
-    // 步进按钮点击事件
-    document.querySelectorAll('.step-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        const step = parseFloat(btn.dataset.step);
-        const slider = document.getElementById(`slider-${id}`);
-        let newVal = parseFloat(slider.value) + step;
-        
-        // 限制范围
-        const min = parseFloat(slider.min);
-        const max = parseFloat(slider.max);
-        newVal = Math.max(min, Math.min(max, newVal));
-        
-        slider.value = newVal;
-        // 手动触发 input 事件以更新视角/沙盘
-        slider.dispatchEvent(new Event('input'));
+    // 统一的设置应用入口：钳制范围 → 更新状态 → 同步滑块/数值显示 → 应用到场景
+    function applySetting(id, value, { fromSlider = false } = {}) {
+      const limits = settingLimits[id];
+      if (!limits) return;
+
+      let newVal = Math.round(value / 5) * 5; // 步长对齐 5，滑块与按钮行为一致
+      newVal = Math.max(limits.min, Math.min(limits.max, newVal));
+      if (newVal === currentSettings[id]) {
+        if (!fromSlider) syncSettingUI(id); // 值没变也把滑块位置拉回有效值
+        return;
+      }
+
+      currentSettings[id] = newVal;
+      syncSettingUI(id);
+
+      if (id === 'pitch' || id === 'yaw' || id === 'zoom') {
+        updateCameraFromSliders();
+      } else if (id === 'width') {
+        tableWidth = newVal;
+        updateSandboxSize();
+      } else if (id === 'depth') {
+        tableDepth = newVal;
+        updateSandboxSize();
+      }
+    }
+
+    // 同步滑块位置与数值显示
+    function syncSettingUI(id) {
+      const slider = document.querySelector(`.setting-slider[data-id="${id}"]`);
+      if (slider) slider.value = currentSettings[id];
+      const label = document.getElementById(`val-${id}`);
+      if (label) {
+        label.textContent = currentSettings[id] + settingLimits[id].unit;
+      }
+    }
+
+    // 滑块拖动（step=5，触屏友好）
+    document.querySelectorAll('.setting-slider').forEach(slider => {
+      slider.addEventListener('input', () => {
+        applySetting(slider.dataset.id, parseFloat(slider.value), { fromSlider: true });
       });
     });
 
-    // 沙盘大小滑动条事件
-    document.getElementById('slider-width').addEventListener('input', e => {
-      const val = parseFloat(e.target.value);
-      tableWidth = val;
-      document.getElementById('val-width').textContent = val;
-      updateSandboxSize();
-    });
-    document.getElementById('slider-depth').addEventListener('input', e => {
-      const val = parseFloat(e.target.value);
-      tableDepth = val;
-      document.getElementById('val-depth').textContent = val;
-      updateSandboxSize();
+    // 步进按钮点击事件（±5，与滑块步长一致）
+    document.querySelectorAll('.step-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        applySetting(id, currentSettings[id] + parseFloat(btn.dataset.step));
+      });
     });
 
     function updateSandboxSize() {
@@ -2788,15 +2831,16 @@ export function initSandboxApp() {
     }
 
     document.getElementById('resetBtn').addEventListener('click', () => {
-      document.getElementById('slider-pitch').value = 30;
-      document.getElementById('slider-yaw').value = 0;
-      document.getElementById('slider-zoom').value = 85;
-      document.getElementById('slider-width').value = 100;
-      document.getElementById('slider-depth').value = 96;
+      currentSettings = {
+        pitch: 30,
+        yaw: 0,
+        zoom: 85,
+        width: 100,
+        depth: 95
+      };
       tableWidth = 100;
       tableDepth = 96;
-      document.getElementById('val-width').textContent = 100;
-      document.getElementById('val-depth').textContent = 96;
+      Object.keys(currentSettings).forEach(syncSettingUI);
       updateCameraFromSliders();
       updateSandboxSize();
       localStorage.removeItem(settingsKey);

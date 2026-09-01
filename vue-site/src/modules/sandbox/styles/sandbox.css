@@ -530,16 +530,17 @@
         -webkit-appearance: none;
       }
       .slider-group input {
-        height: 24px;
+        height: 32px;
+        /* 触屏主要靠滑块操作，保持较大触摸目标 */
       }
       .slider-group input::-webkit-slider-thumb {
-        height: 18px;
-        width: 18px;
-        margin-top: -5px;
+        height: 28px;
+        width: 28px;
+        margin-top: -10px;
       }
       .slider-group input::-moz-range-thumb {
-        height: 18px;
-        width: 18px;
+        height: 28px;
+        width: 28px;
       }
       .slider-group label {
         font-size: 11px;
