@@ -421,7 +421,7 @@ export function initSandboxApp() {
         createPegToy(3, 1, "red", "#3 红色中等高度圆柱体人偶", { radius: 1.18, height: 5.2, head: 1.18, neckStyle: "flat-cylinder" }),
         createConeRoundToy(4, 1, "red", "#4 红色中等高度锥形人偶", { radius: 1.72, radiusTop: 0.72, height: 5.24, head: 1.16, neckStyle: "flat-cylinder", bodyCurveStyle: "bell-reference" }),
         createPureConeToy(5, 1, "red", "#5 红色尖顶圆锥形人偶", { radius: 1.25, height: 6.84, sharpTop: true, eyeYOffset: 5.4, eyeForward: 0.55, eyeScale: 0.5, embedRatio: 1.05 }),
-        createConeCapToy(6, 1, "red", "#6 红色尖帽球头人偶", { radius: 1.62, waistRadius: 0.94, lowerHeight: 2.72, headRadius: 1.02, capRadius: 1.45, capHeight: 3.8, capYOffset: 0.1, tipRadius: 0.0, sharpTop: true, eyeYOffset: -0.05, eyeForward: 0.98, eyeInsetRatio: 0.1, eyeScale: 0.75 }),
+        createConeCapToy(6, 1, "red", "#6 红色尖帽球头人偶", { radius: 1.62, waistRadius: 0.94, lowerHeight: 2.72, headRadius: 1.02, capRadius: 1.18, capHeight: 4.1, capYOffset: 0.32, tipRadius: 0.0, sharpTop: true, eyeYOffset: -0.05, eyeForward: 0.98, eyeInsetRatio: 0.1, eyeScale: 0.9 }),
         createBulbBaseToy(7, 1, "red", "#7 红色球头裙身人偶", { radius: 1.34, skirtHeight: 2.06, skirtTopRadius: 1.08, torsoRadius: 1.08, headRadius: 1.08, legRadius: 0.78, legHeight: 0.82, footRadius: 1.0, footHeight: 0.22, eyeYOffset: 0, eyeInsetRatio: 0.16, eyeScale: 1.02, neckStyle: "flat-cylinder" }),
         createSkirtLegToy(8, 1, "red", "#8 红色球头裙身人偶", { radius: 1.16, skirtHeight: 3.34, skirtTopRadius: 0.94, headRadius: 1.02, legRadius: 0.64, legHeight: 1.4, footRadius: 0.98, footHeight: 0.24, eyeYOffset: 0, eyeForward: 0.86, eyeInsetRatio: 0.16, eyeScale: 1.02, neckStyle: "flat-cylinder", bodyCurveStyle: "bell-reference" }),
         createPegToy(9, 1, "red", "#9 红色矮圆柱体人偶", { shape: "stout-peg", radius: 1.45, height: 3.1, head: 1.02, eyeYOffset: -0.02, eyeForward: 0.92, neckStyle: "flat-cylinder" }),
@@ -2001,7 +2001,7 @@ export function initSandboxApp() {
         if (meta.shape === 'pure-cone') {
           embedRatio = 1.75; // 纯圆锥(5,15) 极大幅度增加嵌入深度，确保只有最表面的一层弧度露出来
         } else if (meta.figureNo === '6') {
-          embedRatio = 0.95; // 6号 人偶修复眼睛看不见的问题，适度嵌入
+          embedRatio = 0.82; // 6号 眼球少嵌入一些，让黑眼睛露出更大的弧面
         }
         const embedDepth = scaledEyeRadius * eyeScale * embedRatio;
         singleEye.position.set(eyeX, eyeY, eyeZ - embedDepth);
