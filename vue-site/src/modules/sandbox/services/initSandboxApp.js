@@ -421,7 +421,7 @@ export function initSandboxApp() {
         createPegToy(3, 1, "red", "#3 红色中等高度圆柱体人偶", { radius: 1.18, height: 5.2, head: 1.18, neckStyle: "flat-cylinder" }),
         createConeRoundToy(4, 1, "red", "#4 红色中等高度锥形人偶", { radius: 1.72, radiusTop: 0.72, height: 5.24, head: 1.16, neckStyle: "flat-cylinder", bodyCurveStyle: "bell-reference" }),
         createPureConeToy(5, 1, "red", "#5 红色尖顶圆锥形人偶", { radius: 1.25, height: 6.84, sharpTop: true, eyeYOffset: 5.4, eyeForward: 0.55, eyeScale: 0.5, embedRatio: 1.05 }),
-        createConeCapToy(6, 1, "red", "#6 红色尖帽球头人偶", { radius: 1.62, waistRadius: 0.94, lowerHeight: 2.72, headRadius: 1.02, capRadius: 1.18, capHeight: 4.1, capYOffset: 0.32, tipRadius: 0.0, sharpTop: true, eyeYOffset: -0.05, eyeForward: 0.98, eyeInsetRatio: 0.1, eyeScale: 0.9 }),
+        createConeCapToy(6, 1, "red", "#6 红色尖帽球头人偶", { radius: 1.62, waistRadius: 0.94, lowerHeight: 2.72, headRadius: 1.02, capRadius: 1.18, capHeight: 3.5, capYOffset: 0.26, tipRadius: 0.0, sharpTop: true, eyeYOffset: -0.05, eyeForward: 0.98, eyeInsetRatio: 0.1, eyeScale: 0.72 }),
         createBulbBaseToy(7, 1, "red", "#7 红色球头裙身人偶", { radius: 1.34, skirtHeight: 2.06, skirtTopRadius: 1.08, torsoRadius: 1.08, headRadius: 1.08, legRadius: 0.78, legHeight: 0.82, footRadius: 1.0, footHeight: 0.22, eyeYOffset: 0, eyeInsetRatio: 0.16, eyeScale: 1.02, neckStyle: "flat-cylinder" }),
         createSkirtLegToy(8, 1, "red", "#8 红色球头裙身人偶", { radius: 1.16, skirtHeight: 3.34, skirtTopRadius: 0.94, headRadius: 1.02, legRadius: 0.64, legHeight: 1.4, footRadius: 0.98, footHeight: 0.24, eyeYOffset: 0, eyeForward: 0.86, eyeInsetRatio: 0.16, eyeScale: 1.02, neckStyle: "flat-cylinder", bodyCurveStyle: "bell-reference" }),
         createPegToy(9, 1, "red", "#9 红色矮圆柱体人偶", { shape: "stout-peg", radius: 1.45, height: 3.1, head: 1.02, eyeYOffset: -0.02, eyeForward: 0.92, neckStyle: "flat-cylinder" }),
@@ -579,7 +579,7 @@ export function initSandboxApp() {
 
     // 4. 沙盘
     let tableWidth = 100;
-    let tableDepth = 96;
+    let tableDepth = 100;
     const tableTopTexture = createBoardTopTexture();
     const tableSideTexture = createWoodTexture(512, 256, { baseColor: '#18100a' });
     
@@ -614,7 +614,7 @@ export function initSandboxApp() {
       yaw: 0,
       zoom: 85,
       width: 100,
-      depth: 96
+      depth: 100
     };
 
     // 视角同步逻辑
@@ -1247,7 +1247,7 @@ export function initSandboxApp() {
           const ccLowerTop = meta.lowerHeight || 3.34;
           const ccWaistY = ccLowerTop + 0.06;
           const ccHeadRadius = meta.headRadius || 1.02;
-          const ccHeadCenterY = ccWaistY + ccHeadRadius * 0.82;
+          const ccHeadCenterY = ccWaistY + ccHeadRadius * 0.7; // 0.7：头部多埋入身体，缩短脖子
           const ccCapBaseY = ccHeadCenterY + ccHeadRadius * (meta.capYOffset !== undefined ? meta.capYOffset : 0.54);
           const ccCapHeight = meta.capHeight || 2.74;
           const ccCapTopY = ccCapBaseY + ccCapHeight;
@@ -1277,16 +1277,16 @@ export function initSandboxApp() {
           const isCcSharp = meta.sharpTop;
           const capR = meta.capRadius || 1.22;
           const ccCapProfile = isCcSharp ? [
-            // 步枪子弹状 (Spitzer/Ogive shape)
+            // 尖顶子弹状：底部直接满宽形成锐利棱角，上部快速收窄成尖顶
             new THREE.Vector2(0, 0),
-            new THREE.Vector2(capR * 0.98, 0.02),
-            new THREE.Vector2(capR, ccCapHeight * 0.15),
-            new THREE.Vector2(capR * 0.99, ccCapHeight * 0.35),
-            new THREE.Vector2(capR * 0.95, ccCapHeight * 0.55),
-            new THREE.Vector2(capR * 0.86, ccCapHeight * 0.72),
-            new THREE.Vector2(capR * 0.70, ccCapHeight * 0.85),
-            new THREE.Vector2(capR * 0.45, ccCapHeight * 0.94),
-            new THREE.Vector2(capR * 0.20, ccCapHeight * 0.98),
+            new THREE.Vector2(capR, 0),
+            new THREE.Vector2(capR, ccCapHeight * 0.12),
+            new THREE.Vector2(capR * 0.98, ccCapHeight * 0.32),
+            new THREE.Vector2(capR * 0.93, ccCapHeight * 0.52),
+            new THREE.Vector2(capR * 0.83, ccCapHeight * 0.66),
+            new THREE.Vector2(capR * 0.64, ccCapHeight * 0.79),
+            new THREE.Vector2(capR * 0.40, ccCapHeight * 0.89),
+            new THREE.Vector2(capR * 0.16, ccCapHeight * 0.96),
             new THREE.Vector2(meta.tipRadius || 0.01, ccCapTopY - ccCapBaseY),
             new THREE.Vector2(0, ccCapTopY - ccCapBaseY + 0.01)
           ] : [
@@ -2603,7 +2603,7 @@ export function initSandboxApp() {
         currentSettings.yaw = parseFloat(s.yaw) || 0;
         currentSettings.zoom = parseFloat(s.zoom) || 85;
         currentSettings.width = parseFloat(s.width) || 100;
-        currentSettings.depth = parseFloat(s.depth) || 96;
+        currentSettings.depth = parseFloat(s.depth) || 100;
 
         tableWidth = currentSettings.width;
         tableDepth = currentSettings.depth;
@@ -2836,10 +2836,10 @@ export function initSandboxApp() {
         yaw: 0,
         zoom: 85,
         width: 100,
-        depth: 95
+        depth: 100
       };
       tableWidth = 100;
-      tableDepth = 96;
+      tableDepth = 100;
       Object.keys(currentSettings).forEach(syncSettingUI);
       updateCameraFromSliders();
       updateSandboxSize();
