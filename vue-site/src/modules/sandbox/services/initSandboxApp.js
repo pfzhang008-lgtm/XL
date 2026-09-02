@@ -1247,7 +1247,7 @@ export function initSandboxApp() {
           const ccLowerTop = meta.lowerHeight || 3.34;
           const ccWaistY = ccLowerTop + 0.06;
           const ccHeadRadius = meta.headRadius || 1.02;
-          const ccHeadCenterY = ccWaistY + ccHeadRadius * 0.7; // 0.7：头部多埋入身体，缩短脖子
+          const ccHeadCenterY = ccWaistY + ccHeadRadius * 0.6; // 0.6：头部再下压，球形更多埋入身体，缩脖子
           const ccCapBaseY = ccHeadCenterY + ccHeadRadius * (meta.capYOffset !== undefined ? meta.capYOffset : 0.54);
           const ccCapHeight = meta.capHeight || 2.74;
           const ccCapTopY = ccCapBaseY + ccCapHeight;
@@ -1285,7 +1285,7 @@ export function initSandboxApp() {
             new THREE.Vector2(capR, 0),
             new THREE.Vector2(capR * 0.97, ccCapHeight * 0.2),
             new THREE.Vector2(capR * 0.93, ccCapHeight * 0.4),
-            new THREE.Vector2(capR * 0.88, ccCapHeight * 0.6),
+            new THREE.Vector2(capR * 0.66, ccCapHeight * 0.6),
             new THREE.Vector2(capR * 0.80, ccCapHeight * 0.75),
             new THREE.Vector2(capR * 0.62, ccCapHeight * 0.87),
             new THREE.Vector2(capR * 0.35, ccCapHeight * 0.95),
